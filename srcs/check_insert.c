@@ -3,25 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   check_insert.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: damboule <damboule@student.42.fr>          +#+  +:+       +#+        */
+/*   By: danglass <danglass@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/07/20 13:15:56 by dygouin           #+#    #+#             */
-/*   Updated: 2020/02/27 13:59:59 by dygouin          ###   ########.fr       */
+/*   Updated: 2020/05/05 14:19:26 by danglass         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "lem_in.h"
 
 static int		special_insert(t_salle **rooms, t_stack *info, t_out **index,
-		t_out **reads)
+		char *line)
 {
-	char	*l_line;
 	char	**splited;
 
-	l_line = (char *)(*reads)->out;
-	if (check_rformat(l_line) == -1 || ft_chrlen(l_line, ' ') >= 3)
+	if (check_rformat(line) == -1 || ft_chrlen(line, ' ') >= 3)
 		return (1);
-	splited = ft_strsplit(l_line, ' ');
+	splited = ft_strsplit(line, ' ');
 	if (create_room(*rooms, splited[0], index, info) == -1)
 		return (1);
 	if (info->ways == 0)
@@ -39,25 +37,27 @@ static int		special_insert(t_salle **rooms, t_stack *info, t_out **index,
 	return (0);
 }
 
-static int		check_hash(t_stack *info, t_out **reads)
+static int		check_hash(t_stack *info, char *line)
 {
-	if (((char *)(*reads)->out)[1] != '#')
+	if (line[1] != '#')
 		return (1);
 	else if (info->fourmies == -1)
 		return (0);
-	else if (ft_strcmp(((char *)(*reads)->out), "##start") == 0
+	else if (ft_strcmp((line), "##start") == 0
 			&& info->n_start == NULL && info->ways == 3)
 	{
 		info->ways = 0;
 		return (1);
 	}
-	else if (ft_strcmp(((char *)(*reads)->out), "##end") == 0
+	else if (ft_strcmp((line), "##end") == 0
 			&& info->n_end == NULL && info->ways == 3)
 	{
 		info->ways = 1;
 		return (1);
 	}
-	else if (ft_strncmp(((char *)(*reads)->out), "##", 2) == 0)
+	else if (ft_strncmp((line), "##", 2) == 0 &&
+		ft_strcmp((line), "##end") != 0 &&
+			ft_strcmp((line), "##start") != 0)
 		return (1);
 	else
 		return (0);
@@ -97,7 +97,7 @@ static int		what_line(t_salle **rooms, t_out **index, char *line,
 int				check_ants(t_stack *info, char *line, int *truth)
 {
 	if (((info->fourmies != -1 || !is_number(line, 1))
-		|| ((info->fourmies = ft_atoi_check(line)) <= 0)) && free_reset(line))
+		|| ((info->fourmies = ft_atoi_check(line)) <= 0)))
 		return (1);
 	*truth = 1;
 	return (0);
@@ -111,16 +111,15 @@ t_stack *info)
 	line = NULL;
 	while (free_reset(line) && get_next_line(0, &line) > 0 && line != NULL)
 	{
-		out_add_tolist(reads, line, 0);
 		if (line[0] == '#')
 		{
-			if ((!check_hash(info, reads)
+			if ((!check_hash(info, line)
 				|| (!(info->fourmies) && line[1] == '#')) && free_reset(line))
 				break ;
 		}
 		else if ((info->ways == 0 || info->ways == 1) && info->step == STEP_ONE)
 		{
-			if (special_insert(rooms, info, index, reads) && free_reset(line))
+			if (special_insert(rooms, info, index, line) && free_reset(line))
 				break ;
 		}
 		else if (is_number(line, 0))
@@ -130,5 +129,6 @@ t_stack *info)
 		}
 		else if (what_line(rooms, index, line, info) == 0 && free_reset(line))
 			break ;
+		out_add_tolist(reads, line, 0);
 	}
 }
